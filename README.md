@@ -2,7 +2,7 @@
 
 _Title_ simplifies the localization of timed text (subtitles, closed captions) using an innovative approach: it parses timed text files in various formats, generates recombined intermediate localization files with sentence-based segmentation, then compiles localized files back into timed text files in their original format.
 
-It allows you to auto-import subtitles from YouTube and generates video preview links for each translation segment.
+It allows you to auto-import subtitles from externals services such as YouTube and Vimeo, and generates video preview links for each translation segment.
 
 # Status
 
@@ -122,7 +122,7 @@ tō fīnd īt’s rārē.
 
 ### Preview links
 
-When Title generates intermediate localization files, it can also automatically generate comments for each segment. For YouTube videos specifically it can provide preview URLs that will play the exact part of the video where the phrase appears. This is a great context for translators, and works with a variety of CAT tools that are able to display comments.
+When Title generates intermediate localization files, it can also automatically generate comments for each segment. For videos imported from YouTube and Vimeo, the generated comment will have a preview link that will play the exact part of the video where the phrase appears (for Vimeo the link will only allow one to start playback from a given time). Such preview links are a great context for translators, and are supposed to work with a variety of CAT tools that are able to display comments.
 
 ### Separate time data
 
