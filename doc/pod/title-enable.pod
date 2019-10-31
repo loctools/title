@@ -1,0 +1,33 @@
+=head1 NAME
+
+title-enable - Enable localization of source timed text files
+
+=head1 SYNOPSIS
+
+C<< title enable E<lt>source-fileE<gt> [--debug] >>
+
+=head1 DESCRIPTION
+
+As an alternative to importing a timed text file from an external URL
+(see L<title-import> command), one can manually put a file in a separate
+folder on a disk and enable its localization. This procedure is needed
+only once for each source localization file.
+
+This command creates a subfolder called `.title` next to the source file,
+then creates a project sub-folder that matches the file name, and places
+a default configuration file in it. Then it parses the source file
+once (see L<title-parse> command) to create localization files.
+
+=head1 OPTIONS
+
+=over 8
+
+=item B<--debug>
+
+Print debug output
+
+=back
+
+=head1 SEE ALSO
+
+Part of L<title> suite.

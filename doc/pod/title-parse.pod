@@ -1,0 +1,29 @@
+=head1 NAME
+
+title-parse - Parse source timed text files
+
+=head1 SYNOPSIS
+
+C<< title parse [source-file-or-directory] [--debug] >>
+
+=head1 DESCRIPTION
+
+Whenever a source file changes, it needs to be re-parsed to update
+source localization file and timing data. You can specify
+one or more source files or folders. If no folder or file is specified,
+a current directory is used. Specifying a directory means that all source
+timed text files in that directory and subdirectories will be processed.
+
+=head1 OPTIONS
+
+=over 8
+
+=item B<--debug>
+
+Print debug output
+
+=back
+
+=head1 SEE ALSO
+
+Part of L<title> suite.

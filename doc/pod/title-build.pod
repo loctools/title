@@ -1,0 +1,30 @@
+=head1 NAME
+
+title-build - Build localized timed text files
+
+=head1 SYNOPSIS
+
+C<< title build [source-file-or-directory] [--debug] >>
+
+=head1 DESCRIPTION
+
+Whenever localization files are updated, or timing data files are changed,
+you need to rebuild localized timed text files. As with L<title-parse>
+command, you can specify one or more source files or folders.
+If no folder or file is specified, a current directory is used.
+Specifying a directory means that all source timed text files in that
+directory and subdirectories will be processed.
+
+=head1 OPTIONS
+
+=over 8
+
+=item B<--debug>
+
+Print debug output
+
+=back
+
+=head1 SEE ALSO
+
+Part of L<title> suite.

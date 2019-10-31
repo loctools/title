@@ -1,0 +1,27 @@
+=head1 NAME
+
+title - Title command launcher
+
+=head1 SYNOPSIS
+
+C<< title E<lt>commandE<gt> [command-specific-parameters] [--command-specific-options] [--debug] >>
+
+Run C<< title help E<lt>commandE<gt> >> for help on a particular command.
+
+=head1 OPTIONS
+
+=over 8
+
+=item B<--version>
+
+Print Title version information and exit.
+
+=item B<--debug>
+
+Print debug output
+
+=back
+
+=head1 SEE ALSO
+
+L<Title GitHub repository|https://github.com/loctools/title>

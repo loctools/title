@@ -1,0 +1,28 @@
+=head1 NAME
+
+title-import - Import subtitles from external services
+
+=head1 SYNOPSIS
+
+C<< title import E<lt>URLE<gt> [--debug] >>
+
+=head1 DESCRIPTION
+
+Given a URL to an external public video service such as YouTube and Vimeo,
+this command will download subtitles for the default language defined
+for that video, place them into the current directorym and enable its
+localization (see L<title-enable> command).
+
+=head1 OPTIONS
+
+=over 8
+
+=item B<--debug>
+
+Print debug output
+
+=back
+
+=head1 SEE ALSO
+
+Part of L<title> suite.
