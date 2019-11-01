@@ -1,46 +1,32 @@
-package Title::Platform::YouTube::Util;
+package Title::Platform::YouTube;
+use parent Title::Platform;
 
 use strict;
 
-use LWP::Simple;
-
-sub generate_preview_link {
-    my ($video_id, $from, $till) = @_;
-
-    my $start = int($from / 1000); # convert ms to seconds, round to lowest integer value
-    my $end = int($till / 1000) + 1; # convert ms to seconds, round to higher integer value
-
-    return "https://www.youtube.com/embed/$video_id?start=$start&end=$end&autoplay=1";
-}
-
-sub get_timedtext_file_extenstion {
-    return ".vtt";
-}
-
-sub get_platform_id {
+sub get_id {
     return 'YouTube';
 }
 
-sub parse_video_url {
-    my ($url) = @_;
+sub parse_url {
+    my ($self, $url) = @_;
 
     if ($url =~ m|^https://www.youtube.com/watch\?v=([^&]+)$|) {
-        return (get_platform_id(), $1);
+        return $1;
     }
 
     if ($url =~ m|^https://youtu.be/([^\?&]+)$|) {
-        return (get_platform_id(), $1);
+        return $1;
     }
 
     return undef;
 }
 
 sub fetch_available_timedtext_tracks {
-    my ($video_id) = @_;
+    my ($self, $video_id) = @_;
 
     my $url = "https://www.youtube.com/api/timedtext?type=list&v=$video_id";
 
-    my $content = get($url);
+    my $content = $self->get_url($url);
 
     if ($content !~ m|^<\?xml\s|s) {
         print "Remote server returned an unexpected content:\n";
@@ -77,9 +63,9 @@ sub fetch_available_timedtext_tracks {
 }
 
 sub fetch_timedtext_track {
-    my ($url) = @_;
+    my ($self, $url) = @_;
 
-    my $content = get($url);
+    my $content = $self->get_url($url);
 
     if ($content !~ m|^WEBVTT\s|s) {
         print "Remote server returned an unexpected content:\n";
@@ -89,7 +75,17 @@ sub fetch_timedtext_track {
         return undef;
     }
 
-    return ($content, get_timedtext_file_extenstion());
+    return ($content, '.vtt');
 }
+
+sub generate_preview_link {
+    my ($self, $video_id, $from, $till) = @_;
+
+    my $start = int($from / 1000); # convert ms to seconds, round to lowest integer value
+    my $end = int($till / 1000) + 1; # convert ms to seconds, round to higher integer value
+
+    return "https://www.youtube.com/embed/$video_id?start=$start&end=$end&autoplay=1";
+}
+
 
 1;

@@ -4,12 +4,19 @@ use parent Title::Command;
 use strict;
 
 use Encode qw(encode_utf8);
-use File::Basename;
+#use File::Basename;
 use File::Path;
 use File::Spec::Functions qw(catfile rel2abs);
 use JSON::PP;
 
 use Title::Command::parse;
+use Title::Util::Path;
+
+# special directory name for title config / work files
+my $TITLE_DIR_NAME_SUFFIX = '.title';
+
+# name of the config file which resides within TITLE_DIR
+my $CONFIG_FILE = 'config.json';
 
 sub get_commands {
     return {
@@ -38,21 +45,18 @@ sub validate_data {
 sub run {
     my ($self) = @_;
 
-    # special directory name for title config / work files
-    my $TITLE_DIR_NAME_SUFFIX = '.title';
-
-    # name of the config file which resides within TITLE_DIR
-    my $CONFIG_FILE = 'config.json';
-
     my $fullpath = $self->{data}->{filename};
-    my ($base_filename, $base_path, $base_suffix) = fileparse($fullpath, qw(.srt)); # just the file name
-    my $filename = $base_filename.$base_suffix;
-    $self->{data}->{base_path} = $base_path;
-    $self->{data}->{base_filename} = $base_filename;
-    $self->{data}->{ext} = $base_suffix;
-    $self->{data}->{filename} = $filename;
 
-    my $root_title_dir = $base_path.$TITLE_DIR_NAME_SUFFIX;
+    my ($dir, $base, $ext) = split_path($fullpath);
+    my $filename = $base.$ext;
+
+    my $format_plugin = $self->{parent}->get_format_plugin_by_extension($ext);
+    if (!$format_plugin) {
+        print "Unknown file type for $filename";
+        return 1;
+    }
+
+    my $root_title_dir = $dir.$TITLE_DIR_NAME_SUFFIX;
 
     if (!-d $root_title_dir) {
         print "Creating directory $root_title_dir\n";
@@ -83,14 +87,14 @@ sub run {
         print "Creating file $config_filename\n";
         open(OUT, ">$config_filename") or die $!;
         binmode(OUT);
-        print OUT make_json_encoder()->utf8->encode($config);
+        print OUT _make_json_encoder()->utf8->encode($config);
         close OUT;
     }
 
-    return Title::Command::parse::run($self);
+    return Title::Command::parse::run_for_file($self, $fullpath);
 }
 
-sub make_json_encoder {
+sub _make_json_encoder {
     return JSON::PP->new->
     indent(1)->indent_length(4)->space_before(0)->space_after(1)->
     escape_slash(0)->canonical;

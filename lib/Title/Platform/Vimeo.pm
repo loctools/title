@@ -1,63 +1,35 @@
-package Title::Platform::Vimeo::Util;
+package Title::Platform::Vimeo;
+use parent Title::Platform;
 
 use strict;
 
 use JSON;
-use LWP::UserAgent;
 
-my $ua = LWP::UserAgent->new();
-#'timeout' => ($self->{timeout} / 1000),
-#'agent' => 'Perl/THttpClient'
-
-#$ua->default_header('Accept' => 'application/x-thrift');
-#$ua->default_header('Content-Type' => 'application/x-thrift');
-$ua->cookie_jar({}); # hash to remember cookies between redirects
-
-sub get_url {
-    my ($url) = @_;
-    my $request = new HTTP::Request(GET => $url);
-    my $response = $ua->request($request);
-    return $response->content;
-}
-
-sub generate_preview_link {
-    my ($video_id, $from, $till) = @_;
-
-    $from = make_timestamp($from);
-    # `till` parameter not supported
-
-    return "https://player.vimeo.com/video/$video_id?autoplay=1#t=$from";
-}
-
-sub get_timedtext_file_extenstion {
-    return ".vtt";
-}
-
-sub get_platform_id {
+sub get_id {
     return 'Vimeo';
 }
 
-sub parse_video_url {
-    my ($url) = @_;
+sub parse_url {
+    my ($self, $url) = @_;
 
     if ($url =~ m|^https://vimeo.com/([^\?&]+)|) {
-        return (get_platform_id(), $1);
+        return $1;
     }
 
     if ($url =~ m|^https://player.vimeo.com/video/([^\?&]+)|) {
-        return (get_platform_id(), $1);
+        return $1;
     }
 
     return undef;
 }
 
 sub fetch_available_timedtext_tracks {
-    my ($video_id) = @_;
+    my ($self, $video_id) = @_;
 
     my $url = "https://player.vimeo.com/video/$video_id";
     print "URL: $url\n";
 
-    my $content = get_url($url);
+    my $content = $self->get_url($url);
 
     my $config_json;
     if ($content =~ m|\svar config = ({.*?});\s|s) {
@@ -103,10 +75,10 @@ sub fetch_available_timedtext_tracks {
 }
 
 sub fetch_timedtext_track {
-    my ($url) = @_;
+    my ($self, $url) = @_;
 
     print "URL: $url\n";
-    my $content = get_url($url);
+    my $content = $self->get_url($url);
 
     if ($content !~ m|^WEBVTT\s|s) {
         print "Remote server returned an unexpected content:\n";
@@ -116,12 +88,12 @@ sub fetch_timedtext_track {
         return undef;
     }
 
-    return ($content, get_timedtext_file_extenstion());
+    return ($content, '.vtt');
 }
 
-# make_timestamp converts a time stamp
+# _make_timestamp converts a time stamp
 # to a string represenation like `1m25s` or `1h0m59s`
-sub make_timestamp {
+sub _make_timestamp {
     my $t = shift;
 
     #my $ms = $t % 1000;
@@ -141,5 +113,15 @@ sub make_timestamp {
 
     return $h.$m.$s;
 }
+
+sub generate_preview_link {
+    my ($self, $video_id, $from, $till) = @_;
+
+    $from = _make_timestamp($from);
+    # `till` parameter not supported
+
+    return "https://player.vimeo.com/video/$video_id?autoplay=1#t=$from";
+}
+
 
 1;

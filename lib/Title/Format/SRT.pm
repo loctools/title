@@ -1,11 +1,19 @@
-package Title::Parser::SRT;
+package Title::Format::SRT;
+use parent Title::Format;
+
+sub get_id {
+    return 'SubRip';
+}
+
+sub get_extensions {
+    return ('.srt');
+}
 
 sub parse {
-    my $raw_srt = shift;
+    my ($self, $raw_srt) = @_;
 
     my @entries = split("\n\n", $raw_srt);
     my @ssmeta = ();
-    #my @srt_text = ();
 
     my $expected_counter = 1;
     foreach my $entry (@entries) {
@@ -21,14 +29,11 @@ sub parse {
         # HH:MM:SS,ZZZ --> HH:MM:SS,ZZZ
         my ($from, $till);
         if ($raw_timestamps =~ m/^(\S+) --> (\S+)$/) {
-            $from = parse_timestamp($1);
-            $till = parse_timestamp($2);
+            $from = _parse_timestamp($1);
+            $till = _parse_timestamp($2);
         } else {
             die "Failed to parse the timestamp line `$raw_timestamps`";
         }
-
-        # escape line breaks and surround them with spaces for readability
-        #$text =~ s/\n/$TMP_NEWLINE_DELIMITER/sg;
 
         push @ssmeta, {
             #key => $counter,
@@ -39,8 +44,6 @@ sub parse {
             #hash => md5_hex(encode_utf8($text))
         };
 
-        #push @srt_text, $text;
-
         $expected_counter++;
     }
 
@@ -48,7 +51,7 @@ sub parse {
 }
 
 sub generate {
-    my $segments = shift;
+    my ($self, $segments) = @_;
 
     my @chunks;
 
@@ -56,14 +59,14 @@ sub generate {
     foreach my $segment (@$segments) {
         $n++;
         push @chunks, $n, "\n";
-        push @chunks, make_timestamp($segment->{from}) , ' --> ' , make_timestamp($segment->{till}) , "\n";
+        push @chunks, _make_timestamp($segment->{from}) , ' --> ' , _make_timestamp($segment->{till}) , "\n";
         push @chunks, $segment->{text}, "\n\n";
     }
 
     return join('', @chunks);
 }
 
-sub parse_timestamp {
+sub _parse_timestamp {
     my $ts = shift;
 
     my ($h, $m, $s, $ms);
@@ -79,7 +82,7 @@ sub parse_timestamp {
     return (($h * 60 + $m) * 60 + $s) * 1000 + $ms;
 }
 
-sub make_timestamp {
+sub _make_timestamp {
     my $t = shift;
 
     my $ms = $t % 1000;

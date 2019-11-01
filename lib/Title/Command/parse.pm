@@ -5,14 +5,12 @@ use strict;
 
 use Digest::MD5 qw(md5_hex);
 use Encode qw(encode_utf8);
-use File::Basename;
+#use File::Basename;
 use File::Spec::Functions qw(catfile rel2abs);
 use JSON::PP;
 
-use Title::Parser::SRT;
-use Title::Parser::VTT;
-use Title::Platform::YouTube::Util;
 use Title::Recombiner;
+use Title::Util::Path;
 use Title::Util::WordWrap;
 
 my $LOCJSON_LINE_LENGTH = 50; # as per LocJSON specs
@@ -45,14 +43,16 @@ sub run {
 sub run_for_file {
     my ($self, $fullpath) = @_;
 
-    my ($base_filename, $base_path, $base_suffix) = fileparse($fullpath, qw(.srt .vtt)); # just the file name
-    my $filename = $base_filename.$base_suffix;
-    $self->{data}->{base_path} = $base_path;
-    $self->{data}->{base_filename} = $base_filename;
-    $self->{data}->{ext} = $base_suffix;
-    $self->{data}->{filename} = $filename;
+    my ($dir, $base, $ext) = split_path($fullpath);
+    my $filename = $base.$ext;
 
-    my $title_dir = catfile($base_path.$TITLE_DIR_NAME_SUFFIX, $filename);
+    my $format_plugin = $self->{parent}->get_format_plugin_by_extension($ext);
+    if (!$format_plugin) {
+        print "Unknown file type for $filename";
+        return 1;
+    }
+
+    my $title_dir = catfile($dir.$TITLE_DIR_NAME_SUFFIX, $filename);
 
     if (!-d $title_dir) {
         print "Directory $title_dir not found\n";
@@ -81,14 +81,7 @@ sub run_for_file {
 
     my $chunks;
 
-    if ($self->{data}->{ext} eq '.srt') {
-        $chunks = Title::Parser::SRT::parse($raw_contents);
-    } elsif ($self->{data}->{ext} eq '.vtt') {
-        $chunks = Title::Parser::VTT::parse($raw_contents);
-    } else {
-        print "Unknown file type for '$filename'";
-        return 1;
-    }
+    $chunks = $format_plugin->parse($raw_contents);
 
     # create a .meta document from the original (not recombined) chunks
 
@@ -107,13 +100,11 @@ sub run_for_file {
 
     $chunks = Title::Recombiner::combine($chunks);
 
-    #print Dumper(\@meta);
-
-    my $meta_filename = catfile($title_dir, $base_filename.'.meta');
+    my $meta_filename = catfile($title_dir, $base.'.meta');
     print "Saving meta output to $meta_filename\n";
     open OUT, ">$meta_filename" or die $!;
     binmode OUT;
-    print OUT make_json_encoder()->utf8->encode(\@meta);
+    print OUT _make_json_encoder()->utf8->encode(\@meta);
     close OUT;
 
     # generate keys and comments for each chunk
@@ -133,14 +124,14 @@ sub run_for_file {
             $key = "$from_segment-$till_segment";
         }
 
-        if ($config->{platform} eq 'Vimeo' && $config->{videoId} ne '') {
-            push @comments, Title::Platform::Vimeo::Util::generate_preview_link(
-                $config->{videoId}, $_->{from}, $_->{till}
-            );
-        }
+        my $platform_plugin = $self->{parent}->{platforms}->{$config->{platform}};
 
-        if ($config->{platform} eq 'YouTube' && $config->{videoId} ne '') {
-            push @comments, Title::Platform::YouTube::Util::generate_preview_link(
+        if ($platform_plugin) {
+            if ($config->{videoId} eq '') {
+                print "Video ID not provided";
+                return 1;
+            }
+            push @comments, $platform_plugin->generate_preview_link(
                 $config->{videoId}, $_->{from}, $_->{till}
             );
         }
@@ -148,11 +139,6 @@ sub run_for_file {
         $_->{key} = $key;
         $_->{comments} = \@comments;
     } @$chunks;
-
-    ######################
-    #print Dumper($chunks);
-    #exit;
-    ######################
 
     # generate locjson
 
@@ -181,22 +167,17 @@ sub run_for_file {
         push(@{$locjson->{properties}->{comments}}, @{$config->{locjsonFileComments}});
     }
 
-    #######
-    #print make_json_encoder()->encode($locjson);
-    #exit;
-    #######
-
-    my $locjson_filename = catfile($title_dir, $base_filename.'.locjson');
+    my $locjson_filename = catfile($title_dir, $base.'.locjson');
     print "Saving localization file to $locjson_filename\n";
     open OUT, ">$locjson_filename" or die $!;
     binmode OUT;
-    print OUT make_json_encoder()->utf8->encode($locjson);
+    print OUT _make_json_encoder()->utf8->encode($locjson);
     close OUT;
 
     return 0;
 }
 
-sub make_json_encoder {
+sub _make_json_encoder {
     return JSON::PP->new->
     indent(1)->indent_length(4)->space_before(0)->space_after(1)->
     escape_slash(0)->canonical;

@@ -37,7 +37,7 @@ sub show_brief_help {
 
     my @commands = sort keys %{$self->{parent}->{commands}};
 
-    print $message ? $message."\n" : "Title $Title::VERSION - Timed Text Localization Pipeline\n";
+    print $message ? $message."\n" : "Title $Title::VERSION - Timed Text Localization Engine\n";
     $self->{parent}->show_synopsis;
 
     # determine the max size of commands to render second column
@@ -54,6 +54,14 @@ sub show_brief_help {
         print "    $_$padding    $info\n" if $_ ne '';
     }
     print "\n";
+
+    print "Available platforms:\n";
+    my @platforms = sort keys %{$self->{parent}->{platforms}};
+    print "    ", join(", ", @platforms), "\n\n";
+
+    print "Available file formats:\n";
+    my @formats = sort keys %{$self->{parent}->{formats}};
+    print "    ", join(", ", @formats), "\n\n";
 }
 
 sub show_default_help {

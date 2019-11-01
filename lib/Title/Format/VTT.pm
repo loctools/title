@@ -1,9 +1,18 @@
-package Title::Parser::VTT;
+package Title::Format::VTT;
+use parent Title::Format;
 
 use strict;
 
+sub get_id {
+    return 'WebVTT';
+}
+
+sub get_extensions {
+    return ('.vtt');
+}
+
 sub parse {
-    my $raw_srt = shift;
+    my ($self, $raw_srt) = @_;
 
     if ($raw_srt !~ m|^WEBVTT\s|s) {
         die "WEBVTT signature not found at the beginning of the file";
@@ -33,8 +42,8 @@ sub parse {
         # HH:MM:SS,ZZZ --> HH:MM:SS,ZZZ
         my ($from, $till);
         if ($raw_timestamps =~ m/^(\S+) --> (\S+)$/) {
-            $from = parse_timestamp($1);
-            $till = parse_timestamp($2);
+            $from = _parse_timestamp($1);
+            $till = _parse_timestamp($2);
         } else {
             die "Failed to parse the timestamp line `$raw_timestamps`";
         }
@@ -50,21 +59,21 @@ sub parse {
 }
 
 sub generate {
-    my $segments = shift;
+    my ($self, $segments) = @_;
 
     my @chunks;
 
     push @chunks, "WEBVTT\n\n";
 
     foreach my $segment (@$segments) {
-        push @chunks, make_timestamp($segment->{from}) , ' --> ' , make_timestamp($segment->{till}) , "\n";
+        push @chunks, _make_timestamp($segment->{from}) , ' --> ' , _make_timestamp($segment->{till}) , "\n";
         push @chunks, $segment->{text}, "\n\n";
     }
 
     return join('', @chunks);
 }
 
-sub parse_timestamp {
+sub _parse_timestamp {
     my $ts = shift;
 
     my ($h, $m, $s, $ms);
@@ -85,7 +94,7 @@ sub parse_timestamp {
     return (($h * 60 + $m) * 60 + $s) * 1000 + $ms;
 }
 
-sub make_timestamp {
+sub _make_timestamp {
     my $t = shift;
 
     my $ms = $t % 1000;

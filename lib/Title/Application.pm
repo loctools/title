@@ -17,6 +17,7 @@ sub new {
     my $self = {};
 
     $self->{commands} = {};
+    $self->{platforms} = {};
 
     bless $self, $class;
 
@@ -57,6 +58,8 @@ sub run {
     unshift @ARGV, 'help' if $help;
 
     $self->load_command_plugins;
+    $self->load_platform_plugins;
+    $self->load_format_plugins;
 
     my $handler = $self->{commands}->{$command};
     if (!$handler) {
@@ -114,37 +117,99 @@ sub run {
 sub load_command_plugins {
     my ($self) = @_;
 
-    my @plugins;
+    foreach my $plugin ($self->load_plugins('Command')) {
+        my $exported_commands = $plugin->get_commands;
+        foreach my $command (keys %$exported_commands) {
+            my $handler = $exported_commands->{$command};
 
-    # find plugins in the 'Command' subfolder relative to the location of the current file (Application.pm)
+            if (exists $self->{commands}->{$command}) {
+                die "Definition for '$command' command already exists";
+            }
 
-    find(sub {
-        if(-f $_ && /\.pm$/) {
-            $_ =~ s/\.pm$//i;
-            push @plugins, $_;
+            if (!exists $handler->{handler}) {
+                die "No 'handler' parameter defined for '$command' command handler" ;
+            }
+
+            $handler->{plugin} = $plugin;
+            $self->{commands}->{$command} = $handler;
         }
-    }, catfile(dirname(rel2abs(__FILE__)), 'Command'));
+    }
+}
 
-    foreach my $plugin (@plugins) {
-        print "Loading command plugin: $plugin\n" if $self->{debug};
+sub load_platform_plugins {
+    my ($self) = @_;
 
-        my $class = 'Title::Command::'.$plugin;
+    foreach my $plugin ($self->load_plugins('Platform')) {
+        $self->{platforms}->{$plugin->get_id} = $plugin;
+    }
+}
+
+sub load_format_plugins {
+    my ($self) = @_;
+
+    foreach my $plugin ($self->load_plugins('Format')) {
+        my $display_name = $plugin->get_id.' ('.join(', ', $plugin->get_extensions).')';
+        $self->{formats}->{$display_name} = $plugin;
+    }
+}
+
+sub gather_format_extensions {
+    my ($self) = @_;
+
+    my $ext = {};
+    foreach my $plugin (values $self->{formats}) {
+        map { $ext->{$_} = 1 } $plugin->get_extensions;
+    }
+    return sort keys %{$ext};
+}
+
+sub get_format_plugin_by_extension {
+    my ($self, $ext) = @_;
+
+    return undef if $ext eq '';
+
+    foreach my $plugin (values $self->{formats}) {
+        map { $_ eq $ext && return $plugin } $plugin->get_extensions;
+    }
+    return undef;
+}
+
+sub load_plugins {
+    my ($self, $subclass) = @_;
+
+    my @result;
+
+    # find plugins in the <subclass> subfolder relative
+    # to the location of the current file (Application.pm)
+
+    my $module_dir = catfile(dirname(rel2abs(__FILE__)), $subclass);
+    opendir(my $dh, $module_dir);
+    my @entries = readdir($dh);
+    closedir($dh);
+
+    foreach my $entry (sort @entries) {
+        next if $entry =~ m/^\./;
+        next if $entry !~ m/\.pm$/;
+        my $file = catfile($module_dir, $entry);
+        next unless -f $file;
+
+        my $plugin = $entry;
+        $plugin =~ s/\.pm$//;
+
+        print "Loading $subclass plugin: $plugin\n"if $self->{debug};
+
+        my $class = "Title::$subclass::$plugin";
 
         my $p;
         eval('use '.$class.'; $p = '.$class.'->new($self);');
         die "Can't create instance for '$class': $@" if $@;
 
-        my $exported_commands = $p->get_commands;
-        foreach my $command (keys %$exported_commands) {
-            my $handler = $exported_commands->{$command};
+        $p->{debug} = $self->{debug};
 
-            die "Definition for '$command' command already exists" if exists $self->{commands}->{$command};
-            die "No 'handler' parameter defined for '$command' command handler" unless exists $handler->{handler};
-
-            $handler->{plugin} = $p;
-            $self->{commands}->{$command} = $handler;
-        }
+        push @result, $p;
     }
+
+    return @result;
 }
 
 sub known_command {

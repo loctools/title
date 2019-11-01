@@ -1,6 +1,6 @@
 =head1 NAME
 
-Title - Timed Text Localization Pipeline
+Title - Timed Text Localization Engine
 
 =head1 DESCRIPTION
 

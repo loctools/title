@@ -10,9 +10,7 @@ use File::Path;
 use File::Spec::Functions qw(catfile rel2abs);
 use JSON::PP;
 
-use Title::Command::parse;
-use Title::Platform::Vimeo::Util;
-use Title::Platform::YouTube::Util;
+use Title::Command::enable;
 
 sub get_commands {
     return {
@@ -42,16 +40,15 @@ sub run {
 
     my $url = $self->{data}->{url};
 
-    my @plugins = (
-        'Title::Platform::Vimeo::Util',
-        'Title::Platform::YouTube::Util',
-    );
-
-    my ($platform, $video_id);
-    foreach my $plugin (@plugins) {
-        eval('($platform, $video_id) = '.$plugin.'::parse_video_url($url)');
-        die "Can't run plugin $plugin: $@" if $@;
-        last if $platform;
+    my ($plugin, $platform, $video_id);
+    foreach my $name (keys %{$self->{parent}->{platforms}}) {
+        my $p = $self->{parent}->{platforms}->{$name};
+        $video_id = $p->parse_url($url);
+        if ($video_id) {
+            $plugin = $p;
+            $platform = $name;
+            last;
+        }
     }
 
     if (!$platform) {
@@ -64,14 +61,7 @@ sub run {
 
     print "Downloading the list of tracks\n";
 
-    my $result;
-    if ($platform eq 'Vimeo') {
-        $result = Title::Platform::Vimeo::Util::fetch_available_timedtext_tracks($video_id);
-    }
-
-    if ($platform eq 'YouTube') {
-        $result = Title::Platform::YouTube::Util::fetch_available_timedtext_tracks($video_id);
-    }
+    my $result = $plugin->fetch_available_timedtext_tracks($video_id);
 
     if (!exists $result->{tracks} || scalar(keys %{$result->{tracks}}) == 0) {
         print "No timed text found for the given URL.\n";
@@ -93,19 +83,12 @@ sub run {
     my $url = $result->{tracks}->{$lang}->{url};
 
     print "Downloading the track for '$lang' language\n";
-    my ($content, $extension);
-    if ($platform eq 'Vimeo') {
-        ($content, $extension) = Title::Platform::Vimeo::Util::fetch_timedtext_track($url);
-    }
-
-    if ($platform eq 'YouTube') {
-        ($content, $extension) = Title::Platform::YouTube::Util::fetch_timedtext_track($url);
-    }
-    my $filename = $lang.$extension;
-
+    my ($content, $extension) = $plugin->fetch_timedtext_track($url);
     if (!$content) {
         return 2;
     }
+
+    my $filename = $lang.$extension;
 
     # use current directory for now
     my $dir = cwd;
@@ -121,14 +104,8 @@ sub run {
     $self->{data}->{platform} = $platform;
     $self->{data}->{video_id} = $video_id;
 
-    return Title::Command::initialize::run($self);
+    return Title::Command::enable::run($self);
     return 0;
 }
-
-#sub make_json_encoder {
-#    return JSON::PP->new->
-#    indent(1)->indent_length(4)->space_before(0)->space_after(1)->
-#    escape_slash(0)->canonical;
-#}
 
 1;
