@@ -9,6 +9,7 @@ use File::Spec::Functions qw(rel2abs catfile);
 use Getopt::Long qw(:config no_auto_abbrev no_ignore_case pass_through);
 
 use Title;
+use Title::Config;
 use Title::GatherFiles;
 
 sub new {
@@ -33,6 +34,8 @@ sub run {
         'debug' => \$debug,
         'version' => \$version,
     );
+
+    $self->{config} = Title::Config->new();
 
     my $command = shift @ARGV;
 
@@ -157,7 +160,7 @@ sub gather_format_extensions {
     my ($self) = @_;
 
     my $ext = {};
-    foreach my $plugin (values $self->{formats}) {
+    foreach my $plugin (values %{$self->{formats}}) {
         map { $ext->{$_} = 1 } $plugin->get_extensions;
     }
     return sort keys %{$ext};
@@ -168,7 +171,7 @@ sub get_format_plugin_by_extension {
 
     return undef if $ext eq '';
 
-    foreach my $plugin (values $self->{formats}) {
+    foreach my $plugin (values %{$self->{formats}}) {
         map { $_ eq $ext && return $plugin } $plugin->get_extensions;
     }
     return undef;

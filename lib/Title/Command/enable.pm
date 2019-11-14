@@ -10,13 +10,8 @@ use File::Spec::Functions qw(catfile rel2abs);
 use JSON::PP;
 
 use Title::Command::parse;
+use Title::Config;
 use Title::Util::Path;
-
-# special directory name for title config / work files
-my $TITLE_DIR_NAME_SUFFIX = '.title';
-
-# name of the config file which resides within TITLE_DIR
-my $CONFIG_FILE = 'config.json';
 
 sub get_commands {
     return {
@@ -56,7 +51,7 @@ sub run {
         return 1;
     }
 
-    my $root_title_dir = $dir.$TITLE_DIR_NAME_SUFFIX;
+    my $root_title_dir = $dir.$Title::Config::TITLE_DIR_NAME;
 
     if (!-d $root_title_dir) {
         print "Creating directory $root_title_dir\n";
@@ -82,7 +77,7 @@ sub run {
         $config->{videoId} = $self->{data}->{video_id};
     }
 
-    my $config_filename = catfile($title_dir, $CONFIG_FILE);
+    my $config_filename = catfile($title_dir, $Title::Config::CONFIG_FILE_NAME);
     if (!-f $config_filename) {
         print "Creating file $config_filename\n";
         open(OUT, ">$config_filename") or die $!;

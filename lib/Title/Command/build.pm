@@ -9,14 +9,9 @@ use Encode qw(encode_utf8);
 use File::Spec::Functions qw(catfile rel2abs);
 use JSON::PP;
 
+use Title::Config;
 use Title::Recombiner;
 use Title::Util::Path;
-
-# special directory name for title config / work files
-my $TITLE_DIR_NAME_SUFFIX = '.title';
-
-# name of the config file which resides within TITLE_DIR
-my $CONFIG_FILE = 'config.json';
 
 my $LOCJSON_EXT = '.locjson';
 
@@ -55,16 +50,16 @@ sub run_for_file {
     $self->{data}->{base} = $base;
     $self->{data}->{ext} = $ext;
 
-    my $title_dir = catfile($dir.$TITLE_DIR_NAME_SUFFIX, $filename);
+    my $title_dir = catfile($dir.$Title::Config::TITLE_DIR_NAME, $filename);
 
     if (!-d $title_dir) {
         print "Directory $title_dir not found\n";
         return 1;
     }
 
-    my $config_filename = catfile($title_dir, $CONFIG_FILE);
+    my $config_filename = catfile($title_dir, $Title::Config::CONFIG_FILE_NAME);
     if (!-f $config_filename) {
-        print "Directory $title_dir doesn't contain a file called $CONFIG_FILE\n";
+        print "Directory $title_dir doesn't contain a file called $Title::Config::CONFIG_FILE_NAME\n";
         return 1;
     }
 

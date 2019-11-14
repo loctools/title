@@ -2,6 +2,7 @@ package Title::GatherFiles;
 
 use strict;
 
+use Cwd qw(abs_path);
 use File::Basename;
 use File::Spec::Functions qw(rel2abs catfile);
 
@@ -58,7 +59,7 @@ sub process_file {
     my ($self, $file) = @_;
     my ($basename, $dir) = fileparse($file);
     if (-d catfile($dir, '.title', $basename)) {
-        push @{$self->{found_files}}, $file;
+        push @{$self->{found_files}}, abs_path($file);
     }
 }
 

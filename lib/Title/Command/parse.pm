@@ -3,23 +3,20 @@ use parent Title::Command;
 
 use strict;
 
+use Cwd qw(abs_path);
 use Digest::MD5 qw(md5_hex);
 use Encode qw(encode_utf8);
 #use File::Basename;
 use File::Spec::Functions qw(catfile rel2abs);
 use JSON::PP;
 
+use Title::Config;
 use Title::Recombiner;
+use Title::TitleServer;
 use Title::Util::Path;
 use Title::Util::WordWrap;
 
 my $LOCJSON_LINE_LENGTH = 50; # as per LocJSON specs
-
-# special directory name for title config / work files
-my $TITLE_DIR_NAME_SUFFIX = '.title';
-
-# name of the config file which resides within TITLE_DIR
-my $CONFIG_FILE = 'config.json';
 
 sub get_commands {
     return {
@@ -52,25 +49,33 @@ sub run_for_file {
         return 1;
     }
 
-    my $title_dir = catfile($dir.$TITLE_DIR_NAME_SUFFIX, $filename);
+    my $title_dir = catfile($dir.$Title::Config::TITLE_DIR_NAME, $filename);
 
     if (!-d $title_dir) {
         print "Directory $title_dir not found\n";
         return 1;
     }
 
-    my $config_filename = catfile($title_dir, $CONFIG_FILE);
-    if (!-f $config_filename) {
-        print "Directory $title_dir doesn't contain a file called $CONFIG_FILE\n";
-        return 1;
+    my $config = $self->{parent}->{config}->get_config_for_dir($title_dir);
+
+    # find the matching Title Server URL and root dir
+
+    my ($ts_url, $rel_path);
+    if (exists $config->{titleServerMappings}) {
+        foreach my $rule (@{$config->{titleServerMappings}}) {
+            my $d = abs_path($rule->{dir});
+            if ($d eq '') {
+                die "Can't resolve directory [".$rule->{dir}."]";
+            }
+            $rel_path = $dir;
+            $rel_path =~ s/^\Q$d\E//g;
+            if ($rel_path ne $dir) {
+                $ts_url = $rule->{url};
+                print "Matching Title Server: $ts_url\n";
+                last;
+            }
+        }
     }
-
-    print "Reading config file $config_filename\n";
-
-    open(CFG, $config_filename) or die $!;
-    binmode(CFG);
-    my $config = decode_json(join('', <CFG>));
-    close(CFG);
 
     print "Reading source file $fullpath\n";
 
@@ -124,12 +129,22 @@ sub run_for_file {
             $key = "$from_segment-$till_segment";
         }
 
-        my $platform_plugin = $self->{parent}->{platforms}->{$config->{platform}};
+        if ($ts_url ne '') {
+            push @comments, Title::TitleServer::generate_preview_link(
+                $ts_url,
+                $rel_path,
+                $base,
+                $from_segment,
+                $till_segment
+            );
+        } else {
+            my $platform_plugin = $self->{parent}->{platforms}->{$config->{platform}};
 
-        if ($platform_plugin) {
-            if ($config->{videoId} eq '') {
-                print "Video ID not provided";
-                return 1;
+            if ($platform_plugin) {
+                if ($config->{videoId} eq '') {
+                    print "Video ID not provided";
+                    return 1;
+                }
             }
             push @comments, $platform_plugin->generate_preview_link(
                 $config->{videoId}, $_->{from}, $_->{till}
