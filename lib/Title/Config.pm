@@ -6,6 +6,7 @@ use Getopt::Long;
 use File::Spec::Functions qw(catfile);
 use JSON::PP;
 
+use Title::Util::JSONFile;
 use Title::Util::Path;
 
 # special directory name for title config / work files
@@ -146,10 +147,7 @@ sub _subst_macros {
 
 sub _read_json {
     my ($filename) = @_;
-    open(JSON, $filename) or die "Reading $filename failed: $!";
-    binmode(JSON);
-    my $data = decode_json(join('', <JSON>));
-    close(JSON);
+    my $data = Title::Util::JSONFile::read($filename);
     my ($config_dir) = split_path($filename);
     $data = _subst_macros($data, _remove_trailing_path_delimiter($config_dir));
     return $data;

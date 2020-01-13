@@ -11,6 +11,7 @@ use JSON::PP;
 
 use Title::Config;
 use Title::Recombiner;
+use Title::Util::JSONFile;
 use Title::Util::Path;
 
 my $LOCJSON_EXT = '.locjson';
@@ -90,12 +91,7 @@ sub process_file {
     }
 
     print "\nReading $locjson_filename\n";
-    open(IN, $locjson_filename) or die $!;
-    binmode(IN);
-    my $raw_locjson = join('', <IN>);
-    close(IN);
-    my $locjson = decode_json($raw_locjson);
-
+    my $locjson = Title::Util::JSONFile::read($locjson_filename);
     my $meta_filename = catfile($dir, $base.'.meta');
 
     if (!-f $meta_filename) {
@@ -104,11 +100,7 @@ sub process_file {
     }
 
     print "Reading $meta_filename\n";
-    open(IN, $meta_filename) or die $!;
-    binmode(IN);
-    my $raw_meta = join('', <IN>);
-    close(IN);
-    my $meta = decode_json($raw_meta);
+    my $meta = Title::Util::JSONFile::read($meta_filename);
 
     my @chunks;
     my $n = 0;
@@ -137,11 +129,7 @@ sub process_file {
 
         my $base_locjson_filename = catfile($dir, $self->{data}->{base}.$LOCJSON_EXT);
         print "\nReading $base_locjson_filename\n";
-        open(IN, $base_locjson_filename) or die $!;
-        binmode(IN);
-        my $base_raw_locjson = join('', <IN>);
-        close(IN);
-        my $base_locjson = decode_json($base_raw_locjson);
+        my $base_locjson = Title::Util::JSONFile::read($base_locjson_filename);
 
         my $total = scalar @{$base_locjson->{units}};
         for (my $i = 0; $i < $total; $i++) {
