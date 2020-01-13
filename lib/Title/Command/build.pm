@@ -130,7 +130,37 @@ sub process_file {
     }
 
     if ($n != $expected_total) {
-        die "Number of segments in LocJSON file ($n) doesn't match the number of segments in its meta file ($expected_total)";
+        print "WARNING: Number of segments in LocJSON file ($n) doesn't match the number of segments in its meta file ($expected_total)\n";
+
+        # read the base LocJSON file and comapre it unit-by-unit to report
+        # misaligned segments
+
+        my $base_locjson_filename = catfile($dir, $self->{data}->{base}.$LOCJSON_EXT);
+        print "\nReading $base_locjson_filename\n";
+        open(IN, $base_locjson_filename) or die $!;
+        binmode(IN);
+        my $base_raw_locjson = join('', <IN>);
+        close(IN);
+        my $base_locjson = decode_json($base_raw_locjson);
+
+        my $total = scalar @{$base_locjson->{units}};
+        for (my $i = 0; $i < $total; $i++) {
+            my $source_unit = $base_locjson->{units}->[$i];
+            my $target_unit = $locjson->{units}->[$i] || {};
+
+            my $source_text = join('', @{$source_unit->{source}});
+            my $target_text = join('', @{$target_unit->{source}});
+
+            my @source_segments = split("\n\n", $source_text);
+            my @target_segments = split("\n\n", $target_text);
+
+            if (scalar(@source_segments) != scalar(@target_segments)) {
+                warn "Unit #$i from $base_locjson_filename:\n========\n$source_text\n========\n\n";
+                warn "Unit #$i from $locjson_filename:\n========\n$target_text\n========\n\n";
+            }
+        }
+        print "Please correct the units above and run `title build` again.\n\n";
+        return 1;
     }
 
     my $output_text;
