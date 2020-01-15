@@ -21,7 +21,7 @@ sub get_commands {
         build => {
             handler => \&run,
             info => 'Build localized timed text files from localization files and metadata',
-            need_files => 1,
+            need_source_files => 1,
         },
     }
 }
@@ -29,7 +29,7 @@ sub get_commands {
 sub run {
     my ($self) = @_;
 
-    foreach my $file (@{$self->{files}}) {
+    foreach my $file (sort keys %{$self->{files}}) {
         print "\n*** $file ***\n";
         $self->run_for_file($file);
     }

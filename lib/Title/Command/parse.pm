@@ -23,7 +23,7 @@ sub get_commands {
         parse => {
             handler => \&run,
             info => 'Parse source timed text files and generate localization files',
-            need_files => 1,
+            need_source_files => 1,
         },
     }
 }
@@ -31,7 +31,7 @@ sub get_commands {
 sub run {
     my ($self) = @_;
 
-    foreach my $file (@{$self->{files}}) {
+    foreach my $file (sort keys %{$self->{files}}) {
         print "\n*** $file ***\n\n";
         $self->run_for_file($file);
     }

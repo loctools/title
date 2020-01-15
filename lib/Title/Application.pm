@@ -80,15 +80,18 @@ sub run {
         }
     }
 
-    if ($handler->{need_files}) {
-        my $gatherer = Title::GatherFiles->new();
+    if ($handler->{need_source_files} || $handler->{need_target_files}) {
+        my $gatherer = Title::GatherFiles->new({
+            need_source_files => $handler->{need_source_files},
+            need_target_files => $handler->{need_target_files},
+        });
         if (scalar @ARGV == 0) {
             push @ARGV, '.';
         }
         $gatherer->run(@ARGV);
-        my @files = @{$gatherer->{found_files}};
-        $handler->{plugin}->{files} = \@files;
-        if (scalar @files == 0) {
+        my $files = $gatherer->{found_files};
+        $handler->{plugin}->{files} = $files;
+        if (scalar(keys %$files) == 0) {
             $self->error("This command expects project files to work against, but none were provided");
         }
     }
