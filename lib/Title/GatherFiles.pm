@@ -61,6 +61,8 @@ sub process_file {
 sub process_subdir {
     my ($self, $dir) = @_;
 
+    # if .title subdirectory exists, gather source/target files
+    # from current directory
     my $title_dir = catfile($dir, $TITLE_DIR);
     if (-d $title_dir) {
         my $files = $self->gather_files_from_dir($dir);
@@ -71,9 +73,9 @@ sub process_subdir {
                 $self->{found_files}->{$fullpath} = $fileinfo;
             }
         }
-        return;
     }
 
+    # process subdirectories
     opendir(my $dh, $dir);
     my @files = sort readdir $dh;
     closedir $dh;
