@@ -17,7 +17,7 @@ sub write {
     my ($data, $filename) = @_;
     open(JSON, ">$filename") or die "Writing $filename failed: $!";
     binmode(JSON);
-    print JSON JSON::XS->new->utf8->pretty->encode($data);
+    print JSON JSON::XS->new->utf8->pretty->canonical->encode($data);
     close(JSON);
     return $data;
 }
