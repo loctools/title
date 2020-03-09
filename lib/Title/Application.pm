@@ -204,7 +204,7 @@ sub load_plugins {
 
         print "Loading $subclass plugin: $plugin\n"if $self->{debug};
 
-        my $class = "Title::$subclass::$plugin";
+        my $class = 'Title::'.$subclass.'::'.$plugin;
 
         my $p;
         eval('use '.$class.'; $p = '.$class.'->new($self);');
