@@ -202,7 +202,7 @@ sub load_plugins {
         my $plugin = $entry;
         $plugin =~ s/\.pm$//;
 
-        print "Loading $subclass plugin: $plugin\n"if $self->{debug};
+        print "Loading $subclass plugin: $plugin\n" if $self->{debug};
 
         my $class = 'Title::'.$subclass.'::'.$plugin;
 
