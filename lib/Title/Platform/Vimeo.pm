@@ -32,7 +32,7 @@ sub fetch_available_timedtext_tracks {
     my $content = $self->get_url($url);
 
     my $config_json;
-    if ($content =~ m|\svar config = ({.*?});\s|s) {
+    if ($content =~ m|\svar config = (\{.*?\});\s|s) {
         $config_json = $1;
     } else {
         print "Remote server returned an unexpected content:\n";
