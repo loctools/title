@@ -2,7 +2,7 @@
 
 _Title_ simplifies the localization of timed text (subtitles, closed captions) using an innovative approach: it parses timed text files in various formats, generates recombined intermediate localization files with sentence-based segmentation, then compiles localized files back into timed text files in their original format.
 
-It allows you to auto-import subtitles from externals services such as YouTube and Vimeo, and generates video preview links for each translation segment.
+It allows you to auto-import subtitles from external services such as YouTube and Vimeo, and generates video preview links for each translation segment.
 
 # Status
 
